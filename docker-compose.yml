@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  electroservice-spa:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: electroservice-spa
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    networks:
+      - spa-network
+
+networks:
+  spa-network:
+    driver: bridge
