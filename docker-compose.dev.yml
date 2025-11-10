@@ -1,18 +1,36 @@
 version: '3.8'
 
 services:
-  # Base de datos PostgreSQL
+  # Contenedor de desarrollo principal
+  app:
+    image: node:18-alpine
+    container_name: techfix-dev
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - /workspace/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+    command: sleep infinity
+    networks:
+      - techfix_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Base de datos PostgreSQL (misma que producción)
   postgres:
     image: postgres:15-alpine
-    container_name: techfix-postgres
+    container_name: techfix-dev-postgres
     environment:
       POSTGRES_DB: techfix_db
       POSTGRES_USER: strapi_user
       POSTGRES_PASSWORD: strapi_password
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./docker/database/init:/docker-entrypoint-initdb.d
+      - postgres_dev_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     networks:
@@ -24,14 +42,14 @@ services:
       timeout: 5s
       retries: 5
 
-  # Strapi CMS
+  # Strapi para desarrollo
   strapi:
     image: node:18-alpine
-    container_name: techfix-strapi
+    container_name: techfix-dev-strapi
     working_dir: /app
     volumes:
       - ./docker/strapi:/app
-      - strapi_node_modules:/app/node_modules
+      - strapi_dev_node_modules:/app/node_modules
     ports:
       - "1337:1337"
     environment:
@@ -42,11 +60,11 @@ services:
       DATABASE_NAME: techfix_db
       DATABASE_USERNAME: strapi_user
       DATABASE_PASSWORD: strapi_password
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
-      ADMIN_JWT_SECRET: your-admin-jwt-secret-change-in-production
-      APP_KEYS: app-key-1,app-key-2,app-key-3,app-key-4
-      API_TOKEN_SALT: your-api-token-salt
-      TRANSFER_TOKEN_SALT: your-transfer-token-salt
+      JWT_SECRET: dev-jwt-secret-not-for-production
+      ADMIN_JWT_SECRET: dev-admin-jwt-secret
+      APP_KEYS: dev-key-1,dev-key-2,dev-key-3,dev-key-4
+      API_TOKEN_SALT: dev-api-token-salt
+      TRANSFER_TOKEN_SALT: dev-transfer-token-salt
     command: sh -c "if [ ! -f package.json ]; then npm create strapi-app@latest . --quickstart --no-run; fi && npm install && npm run develop"
     depends_on:
       postgres:
@@ -55,34 +73,12 @@ services:
       - techfix_network
     restart: unless-stopped
 
-  # pgAdmin para gestión de base de datos (opcional)
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: techfix-pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@techfix.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    depends_on:
-      - postgres
-    networks:
-      - techfix_network
-    restart: unless-stopped
-
-# Volúmenes persistentes
 volumes:
-  postgres_data:
+  postgres_dev_data:
     driver: local
-  strapi_node_modules:
-    driver: local
-  pgadmin_data:
+  strapi_dev_node_modules:
     driver: local
 
-# Red personalizada
 networks:
   techfix_network:
     driver: bridge
