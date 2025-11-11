@@ -5,14 +5,14 @@
   "description": "Backend Strapi para TechFix Pro SPA",
   "scripts": {
     "build": "strapi build",
-    "develop": "strapi develop",
+    "develop": "strapi develop --host 0.0.0.0",
     "start": "strapi start",
     "strapi": "strapi"
   },
   "dependencies": {
-    "@strapi/strapi": "4.15.5",
-    "@strapi/plugin-users-permissions": "4.15.5",
-    "@strapi/plugin-i18n": "4.15.5",
+    "@strapi/strapi": "^4.15.5",
+    "@strapi/plugin-users-permissions": "^4.15.5",
+    "@strapi/plugin-i18n": "^4.15.5",
     "pg": "^8.11.3"
   },
   "author": {

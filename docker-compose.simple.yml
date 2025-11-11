@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: techfix-postgres
+    environment:
+      POSTGRES_DB: techfix_db
+      POSTGRES_USER: strapi_user
+      POSTGRES_PASSWORD: strapi_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - techfix_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U strapi_user -d techfix_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Strapi CMS - Configuración simplificada
+  strapi:
+    build:
+      context: ./docker/strapi
+      dockerfile: Dockerfile
+    container_name: techfix-strapi
+    ports:
+      - "1337:1337"
+    environment:
+      NODE_ENV: development
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: techfix_db
+      DATABASE_USERNAME: strapi_user
+      DATABASE_PASSWORD: strapi_password
+      JWT_SECRET: techfix-super-secret-jwt-key-2024
+      ADMIN_JWT_SECRET: techfix-admin-jwt-secret-2024
+      APP_KEYS: "app-key-1,app-key-2,app-key-3,app-key-4"
+    volumes:
+      - ./docker/strapi:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - techfix_network
+    restart: unless-stopped
+
+# Volúmenes persistentes
+volumes:
+  postgres_data:
+    driver: local
+
+# Red personalizada
+networks:
+  techfix_network:
+    driver: bridge
